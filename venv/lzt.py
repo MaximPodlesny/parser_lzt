@@ -3,7 +3,6 @@ import json
 import csv
 from random import randint
 from os import path, walk
-# from tkinter import W
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
@@ -12,10 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.chrome.service import Service
 # from fake_useragent import UserAgent
-# from seleniumbase import SB
 from twocaptcha import TwoCaptcha
-
-# import pywhatkit.whats as pk
 
 path_list_accounts = path.abspath(path.join(path.dirname(__file__), 'list_accounts_lzt.csv'))
 secret = path.abspath(path.join(path.dirname(__file__), 'secret_lzt.json'))
@@ -57,25 +53,26 @@ def main():
         except:
             pass
         driver.find_element(By.CSS_SELECTOR, '#navigation > div.pageContent > nav > div > div > a.button.primary.login-and-signup-btn.OverlayTrigger').click()
-        # blancks = driver.window_handles
         time.sleep(10)
-       
-        # print(WebDriverWait(driver, 20).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, 'iframe[title="Виджет, содержащий вызов безопасности Cloudflare"]'))))
-
-        input_key = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.NAME, 'cf-turnstile-response')))
         
+        # Решение капчи
+        input_key = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.NAME, 'cf-turnstile-response')))
         solver = TwoCaptcha('555b06d2169b354083e34ec2be1bedad')
         token = solver.turnstile(sitekey='0x4AAAAAAADMHhlDN2zO9nrC', url='https://lzt.market/?pget=1')
         
         driver.execute_script('arguments[0].setAttribute("value", arguments[1]);', input_key, token['code'])
         driver.execute_script('arguments[0].dispatchEvent(new Event("input", { bubbles: true }));', input_key)
         driver.execute_script('arguments[0].dispatchEvent(new Event("change", { bubbles: true }));', input_key)
+        
+        # Считывание данных из файла 
         with open(secret, 'r', encoding='utf-8') as f:
             reader = json.load(f)
             login = reader['login']
             password = reader['password']
             secret_word = reader['secret']
             refresh_time = reader['refresh_time']
+
+        #  Ввод данных и аутотентификация
         driver.find_element(By.NAME, 'login').clear
         driver.find_element(By.NAME, 'login').send_keys(login[:len(login)//2])
         time.sleep(0.2)
@@ -90,13 +87,10 @@ def main():
         
         time.sleep(3)
         input('Введите параметры поиска и нажмите Enter')
-        # driver.find_element(By.NAME, 'pmax').send_keys(10)
-        # driver.find_element(By.NAME, 'pmax').send_keys(Keys.ENTER)
-        # time.sleep(0.4)
-        # WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#SubmitSearchButton'))).click()
-        # time.sleep(2)
-        # driver.execute_script('window.scrollBy(0, 100)')
+        
         action = ActionChains(driver)
+
+        #  Зацикленный процесс покупки аккаунтов
         while True:
             refr = driver.find_element(By.CSS_SELECTOR, '#title > div > span')
             driver.execute_script('return arguments[0].scrollIntoView(true);', driver.find_element(By.CSS_SELECTOR, '#content > div > div > div.mainContainer > div > div.categoryLinks'))
@@ -114,7 +108,7 @@ def main():
                 if reader[0]:
                     reader = [i[2] for i in reader]
                 
-                
+                # Бесполезный цикл
                 for i, ac in enumerate(accounts):
                     if i > 5:
                         driver.quit()
@@ -179,6 +173,8 @@ def main():
 
                         except:
                             pass
+
+                        #  Покупка с чекбоксом
                         try:
                             try:
                                 driver.find_element(By.CSS_SELECTOR, '#ctrl_record_enabled').click()
@@ -191,6 +187,8 @@ def main():
                             print('С записью')
                         except:
                             pass
+
+                        # Покупка без чекбокса с проверкой аккаунта
                         try:
                             action.send_keys(Keys.ENTER).perform()
                             # WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.NoRequireVideoRecording.noRequireVideoRecording > input')))
@@ -204,6 +202,8 @@ def main():
 
                         l = [title, link, ac_id]
                         print(f"Куплен {[title, link, ac_id]}")
+
+                        # Запись данных по купленному аккаунту
                         with open(path_list_accounts, 'a', encoding='utf-8', newline='') as file:
                             writer = csv.writer(file)
                             # writer.writerow(['Title', 'Link', 'Id])
@@ -214,26 +214,6 @@ def main():
                         time.sleep(2)
 
 
-
-        # if new_list_jobs:              
-        #     count = 0
-        #     for data in new_list_jobs:
-        #         message = '\n'.join(data)
-        #         try:
-        #                 pk.sendwhatmsg_instantly('+79898198015', message=message,\
-        #                                                     wait_time=60, tab_close=True)
-        #         except:
-        #             pass
-        #         count += 1
-        #     try:
-        #         pk.sendwhatmsg_instantly('+79898198015', message=f'Новых заказов: {count}',\
-        #                                                 wait_time=60, tab_close=True)
-        #     except:
-        #         pass
-
-        
-    
-    
 
 if __name__=='__main__':
     with open(secret, 'r', encoding='utf-8') as file:
