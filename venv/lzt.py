@@ -47,7 +47,7 @@ def main():
         
         url = "https://lzt.market/" 
         driver.get(url)
-        driver.implicitly_wait(10)
+        # driver.implicitly_wait(10)
         try:
             driver.find_element(By.CSS_SELECTOR, 'button.btn').click()
         except:
@@ -90,128 +90,142 @@ def main():
         
         action = ActionChains(driver)
 
+        counter = 0
         #  Зацикленный процесс покупки аккаунтов
         while True:
             refr = driver.find_element(By.CSS_SELECTOR, '#title > div > span')
+            driver.refresh()
             driver.execute_script('return arguments[0].scrollIntoView(true);', driver.find_element(By.CSS_SELECTOR, '#content > div > div > div.mainContainer > div > div.categoryLinks'))
-            action.move_to_element(refr).pause(0.5).click().perform()
+            # action.move_to_element(refr).pause(0.5).click().perform()
             time.sleep(3)
 
             try:
-                accounts = driver.find_element(By.CSS_SELECTOR, 'form.InlineModForm.section').find_elements(By.TAG_NAME, 'li')[:10]
+                accounts = driver.find_element(By.CSS_SELECTOR, 'form.InlineModForm.section').find_elements(By.TAG_NAME, 'li')
             except:
                 time.sleep(randint(2, refresh_time))
                 continue
-            with open(path_list_accounts, 'r', encoding='utf-8') as file:
-                reader = list(csv.reader(file))[1:]
+            # print(len(accounts))
+            # with open(path_list_accounts, 'r', encoding='utf-8') as file:
+            #     reader = list(csv.reader(file))[1:]
                 
-                if reader[0]:
-                    reader = [i[2] for i in reader]
-                
-                # Бесполезный цикл
-                for i, ac in enumerate(accounts):
-                    if i > 5:
-                        driver.quit()
-                        break
-                    WebDriverWait(driver, 10).until(EC.visibility_of(ac))
+            #     if reader[0]:
+            #         reader = [i[2] for i in reader]
 
-                    link = f"https://lzt.market/{driver.find_element(By.CSS_SELECTOR, 'a.marketIndexItem--Title.PopupItemLink').get_attribute('href')}"
-                    ac_id = ac.get_attribute('id').split('--')[1]
+            # Проходим по собранным аккаунтам
+            for i, ac in enumerate(accounts):
+                if i > 5:
+                    driver.quit()
+                    break
+                driver.execute_script('return arguments[0].scrollIntoView(true);', ac)
+                driver.execute_script('window.scrollBy(0, -100)')
+                time.sleep(0.5)
+                WebDriverWait(driver, 10).until(EC.visibility_of(ac))
+
+                link = f"https://lzt.market/{driver.find_element(By.CSS_SELECTOR, 'a.marketIndexItem--Title.PopupItemLink').get_attribute('href')}"
+                ac_id = ac.get_attribute('id').split('--')[1]
+                
+                
                     
-                    if ac_id not in reader:
-                        
-                        ac.find_element(By.CSS_SELECTOR, 'a.marketIndexItem--Title.PopupItemLink').click() # Переход по ссылке купить
-                        time.sleep(5)
-                        blanks = driver.window_handles
-                        driver.switch_to.window(blanks[1])
-                        time.sleep(1)
-                        title = driver.find_element(By.CSS_SELECTOR, '#content > div > div > div.mainContainer > div > div.market--titleBar.market--spec--titleBar > div.marketItemView--title > h1 > span').text.strip()
-                        
-                        
-                        try:
-                            # buy = driver.find_element(By.XPATH, '//*[@id="content"]/div/div/div[2]/div/div[2]/div[3]/div[1]/a[2]').click()
-                            buy = driver.find_element(By.CSS_SELECTOR, 'a.button.primary.InlinePurchase.OverlayTrigger.DisableButton.marketViewItem--buyButton').click()
-                        except:
-                            driver.close()
-                            driver.switch_to.window(blanks[0])
-                            time.sleep(1)
-                            continue
+                ac.find_element(By.CSS_SELECTOR, 'a.marketIndexItem--Title.PopupItemLink').click() # Переход по ссылке купить
+                time.sleep(3)
+                blanks = driver.window_handles
+                driver.switch_to.window(blanks[1])
+                time.sleep(1)
+                title = driver.find_element(By.CSS_SELECTOR, '#content > div > div > div.mainContainer > div > div.market--titleBar.market--spec--titleBar > div.marketItemView--title > h1 > span').text.strip()
+                
+                # print(i)
+                try:
+                    # buy = driver.find_element(By.XPATH, '//*[@id="content"]/div/div/div[2]/div/div[2]/div[3]/div[1]/a[2]').click()
+                    buy = driver.find_element(By.CSS_SELECTOR, 'a.button.primary.InlinePurchase.OverlayTrigger.DisableButton.marketViewItem--buyButton').click()
+                except:
+                    driver.close()
+                    driver.switch_to.window(blanks[0])
+                    time.sleep(1)
+                    continue
 
-                        # Проверка на окно пополнени баланса
-                        try:
-                            driver.find_element(By.XPATH, '//*[@id="XenForo"]/body/div[9]/div/div/h2')
-                            print('Пополните баланс')
-                            break
-                        except:
-                            pass
+                # Проверка на окно пополнени баланса
+                try:
+                    driver.find_element(By.XPATH, '//*[@id="XenForo"]/body/div[9]/div/div/h2')
+                    print('Пополните баланс')
+                    time.sleep(5)
+                    break
+                except:
+                    pass
 
-                        # Ввод секретного кода
-                        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.NAME, 'secret_answer')))
-                        secret_input = driver.find_element(By.NAME, 'secret_answer').send_keys(secret_word)
+                # Ввод секретного кода
+                try:
+                    WebDriverWait(driver, 2).until(EC.element_to_be_clickable((By.NAME, 'secret_answer')))
+                    secret_input = driver.find_element(By.NAME, 'secret_answer').send_keys(secret_word)
 
-                        time.sleep(0.5)
-                        driver.find_element(By.CSS_SELECTOR, 'div.SA--bottom > input.button.primary.mn-15-0-0.OverlayTrigger').click()
+                    time.sleep(0.5)
+                    driver.find_element(By.CSS_SELECTOR, 'div.SA--bottom > input.button.primary.mn-15-0-0.OverlayTrigger').click()
+                except:
+                    pass
 
-                        # Проверка валидности кода
-                        try:
-                            driver.find_element(By.LINK_TEXT, 'Вы ввели неправильный ответ на секретный вопрос')
-                            print('Вы ввели неправильный ответ на секретный вопрос')
-                            check_secret()
-                        except:
-                            pass
+                # Проверка валидности кода
+                try:
+                    driver.find_element(By.LINK_TEXT, 'Вы ввели неправильный ответ на секретный вопрос')
+                    print('Вы ввели неправильный ответ на секретный вопрос')
+                    check_secret()
+                except:
+                    pass
 
-                        # Покупка
-                        try:
-                            # Проверка наличия чекбокса
-                            try:
-                                driver.find_element(By.CSS_SELECTOR, '#ctrl_record_enabled').click()
-                            except:
-                                pass
-                            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#BuyWithoutValidationButton')))
-                            WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#BuyWithoutValidationButton'))).click()
-                            print('Без проверки')
+                # Покупка
+                try:
+                    # Проверка наличия чекбокса
+                    try:
+                        driver.find_element(By.CSS_SELECTOR, '#ctrl_record_enabled').click()
+                    except:
+                        pass
+                    WebDriverWait(driver, 1).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#BuyWithoutValidationButton')))
+                    WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#BuyWithoutValidationButton'))).click()
+                    # print('Без проверки')
 
-                        except:
-                            pass
+                except:
+                    pass
 
-                        #  Покупка с чекбоксом
-                        try:
-                            try:
-                                driver.find_element(By.CSS_SELECTOR, '#ctrl_record_enabled').click()
-                            except:
-                                pass
-                            # WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'body > div.modal.fade.in > div > div > div > form.MarketItemBuy--confirmBuyForm > div.NoRequireVideoRecording.noRequireVideoRecording > input')))
-                            # WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'body > div.modal.fade.in > div > div > div > form.MarketItemBuy--confirmBuyForm > div.NoRequireVideoRecording.noRequireVideoRecording > input'))).click()
-                            WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#ctrl_record_enabled_Disabler > input')))
-                            WebDriverWait(driver, 40).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#ctrl_record_enabled_Disabler > input'))).click()
-                            print('С записью')
-                        except:
-                            pass
+                #  Покупка с чекбоксом
+                try:
+                    try:
+                        driver.find_element(By.CSS_SELECTOR, '#ctrl_record_enabled').click()
+                    except:
+                        pass
+                    # WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'body > div.modal.fade.in > div > div > div > form.MarketItemBuy--confirmBuyForm > div.NoRequireVideoRecording.noRequireVideoRecording > input')))
+                    # WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'body > div.modal.fade.in > div > div > div > form.MarketItemBuy--confirmBuyForm > div.NoRequireVideoRecording.noRequireVideoRecording > input'))).click()
+                    WebDriverWait(driver, 1).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#ctrl_record_enabled_Disabler > input')))
+                    WebDriverWait(driver, 3).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#ctrl_record_enabled_Disabler > input'))).click()
+                    # print('С записью')
+                except:
+                    pass
 
-                        # Покупка без чекбокса с проверкой аккаунта
-                        try:
-                            action.send_keys(Keys.ENTER).perform()
-                            # WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.NoRequireVideoRecording.noRequireVideoRecording > input')))
-                            # WebDriverWait(driver, 40).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.NoRequireVideoRecording.noRequireVideoRecording > input'))).click()
-                        except:
-                            print(f"Покупка {[title, link, ac_id]} не состоялась")
-                            driver.close()
-                            driver.switch_to.window(blanks[0])
-                            time.sleep(1)
-                            continue
+                # Покупка без чекбокса с проверкой аккаунта
+                try:
+                    # WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.NoRequireVideoRecording.noRequireVideoRecording > input')))
+                    action.send_keys(Keys.ENTER).perform()
+                    # WebDriverWait(driver, 40).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.NoRequireVideoRecording.noRequireVideoRecording > input'))).click()
+                except:
+                    print()
+                    print(f"Покупка {[title, link, ac_id]} не состоялась")
+                    print()
+                    driver.close()
+                    driver.switch_to.window(blanks[0])
+                    time.sleep(1)
+                    continue
 
-                        l = [title, link, ac_id]
-                        print(f"Куплен {[title, link, ac_id]}")
+                l = [title, link, ac_id]
 
-                        # Запись данных по купленному аккаунту
-                        with open(path_list_accounts, 'a', encoding='utf-8', newline='') as file:
-                            writer = csv.writer(file)
-                            # writer.writerow(['Title', 'Link', 'Id])
-                            writer.writerows(l)
-                        time.sleep(2)
-                        driver.close()
-                        driver.switch_to.window(blanks[0])
-                        time.sleep(2)
+                print(f"{i+1+counter} - Куплен {[title, link, ac_id]}")
+
+                # Запись данных по купленному аккаунту
+                with open(path_list_accounts, 'a', encoding='utf-8', newline='') as file:
+                    writer = csv.writer(file)
+                    # writer.writerow(['Title', 'Link', 'Id])
+                    writer.writerows(l)
+                time.sleep(2)
+                driver.close()
+                driver.switch_to.window(blanks[0])
+                time.sleep(2)
+            counter += len(accounts)
 
 
 
@@ -224,3 +238,5 @@ if __name__=='__main__':
         main()
     except:
         pass
+    
+    
